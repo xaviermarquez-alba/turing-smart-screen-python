@@ -99,3 +99,323 @@ class ExampleCustomTextOnlyData(CustomDataSource):
     def last_values(self) -> List[float]:
         # If a custom data class only has text values, it won't be possible to display line graph
         pass
+
+
+# --- Claude Code / Cursor usage and keyless weather sensors (used by the Cyberpunk-landscape theme) ---
+import datetime
+import json
+import os
+import sqlite3
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+
+def _format_count(value: float) -> str:
+    # Fixed-width (7 chars) human-readable count, e.g. '  12.3K', '  1.25M'
+    if value is None or math.isnan(value):
+        text = "--"
+    elif value < 1000:
+        text = f"{value:.0f}"
+    elif value < 1000000:
+        text = f"{value / 1000:.1f}K"
+    else:
+        text = f"{value / 1000000:.2f}M"
+    return f"{text:>7}"
+
+
+def _format_percent(value: float) -> str:
+    return " --%" if value is None or math.isnan(value) else f"{value:>3.0f}%"
+
+
+def _format_countdown(timestamp: float) -> str:
+    # Fixed-width (6 chars) time left before the given timestamp, e.g. ' 2h13m', ' 3d04h'
+    if timestamp is None or math.isnan(timestamp):
+        return "    --"
+    minutes = max(0, int((timestamp - time.time()) / 60))
+    if minutes >= 24 * 60:
+        text = f"{minutes // 1440}d{minutes % 1440 // 60:02d}h"
+    else:
+        text = f"{minutes // 60}h{minutes % 60:02d}m"
+    return f"{text:>6}"
+
+
+def _claude_dir() -> Path:
+    return Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
+
+
+def _http_get_json(url: str, headers: dict = None):
+    request = urllib.request.Request(url, headers=headers or {})
+    with urllib.request.urlopen(request, timeout=5) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+class _ClaudeTokens:
+    # Sums the tokens (input + output + cache creation, cache reads excluded) reported in Claude Code local
+    # session transcripts (~/.claude/projects/**/*.jsonl). No credentials or network access needed.
+    TTL = 10  # seconds between two scans
+    _files = {}  # path -> (mtime, size, [(timestamp, message key, tokens)])
+    _result = (0.0, math.nan, math.nan)  # (scan time, tokens today, tokens last 5h)
+
+    @staticmethod
+    def _parse(path):
+        entries = []
+        with open(path, "r", encoding="utf-8", errors="ignore") as file:
+            for line in file:
+                if '"usage"' not in line:
+                    continue
+                try:
+                    data = json.loads(line)
+                    message = data["message"]
+                    usage = message["usage"]
+                    timestamp = datetime.datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00")).timestamp()
+                    tokens = (usage.get("input_tokens") or 0) + (usage.get("output_tokens") or 0) + (
+                            usage.get("cache_creation_input_tokens") or 0)
+                    entries.append((timestamp, str(message.get("id")) + str(data.get("requestId")), tokens))
+                except (ValueError, KeyError, TypeError, AttributeError):
+                    continue
+        return entries
+
+    @classmethod
+    def get(cls):
+        now = time.time()
+        if now - cls._result[0] < cls.TTL:
+            return cls._result
+        midnight = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+        last_5h = now - 5 * 3600
+        oldest = min(midnight, last_5h)
+        today = recent = 0
+        seen = set()
+        try:
+            for path in (_claude_dir() / "projects").rglob("*.jsonl"):
+                try:
+                    stat = path.stat()
+                    if stat.st_mtime < oldest:
+                        continue
+                    cached = cls._files.get(path)
+                    if cached is None or cached[0] != stat.st_mtime or cached[1] != stat.st_size:
+                        cached = (stat.st_mtime, stat.st_size, cls._parse(path))
+                        cls._files[path] = cached
+                except OSError:
+                    continue
+                for timestamp, key, tokens in cached[2]:
+                    if key in seen:  # A same message is written several times in transcripts
+                        continue
+                    seen.add(key)
+                    if timestamp >= midnight:
+                        today += tokens
+                    if timestamp >= last_5h:
+                        recent += tokens
+            cls._result = (now, float(today), float(recent))
+        except OSError:
+            cls._result = (now, math.nan, math.nan)
+        return cls._result
+
+
+class _ClaudePlan:
+    # Reads the Claude subscription usage (5-hour session and 7-day limits) from Anthropic usage endpoint, using the
+    # OAuth token stored by Claude Code on this computer. The token is only ever sent to api.anthropic.com.
+    # This endpoint is not documented: values are shown as '--' if it is unavailable.
+    URL = "https://api.anthropic.com/api/oauth/usage"
+    TTL = 300  # seconds between two requests
+    TTL_ERROR = 900  # seconds to wait after a failed request
+    MAX_AGE = 3600  # seconds during which the last good values are kept if requests fail
+    _next = 0.0
+    _updated = 0.0
+    _values = (math.nan, math.nan, math.nan, math.nan)  # (5h %, 5h reset time, 7d %, 7d reset time)
+
+    @staticmethod
+    def _window(data: dict, name: str):
+        window = data.get(name) or {}
+        percent = window.get("utilization")
+        reset = window.get("resets_at")
+        percent = float(percent) if percent is not None else math.nan
+        reset = datetime.datetime.fromisoformat(reset.replace("Z", "+00:00")).timestamp() if reset else math.nan
+        return percent, reset
+
+    @classmethod
+    def get(cls):
+        now = time.time()
+        if now >= cls._next:
+            try:
+                with open(_claude_dir() / ".credentials.json", "r", encoding="utf-8") as file:
+                    token = json.load(file)["claudeAiOauth"]["accessToken"]
+                data = _http_get_json(cls.URL, {"Authorization": "Bearer " + token,
+                                                "anthropic-beta": "oauth-2025-04-20"})
+                cls._values = cls._window(data, "five_hour") + cls._window(data, "seven_day")
+                cls._updated = now
+                cls._next = now + cls.TTL
+            except (OSError, ValueError, KeyError, TypeError, AttributeError):
+                cls._next = now + cls.TTL_ERROR
+        if now - cls._updated > cls.MAX_AGE:
+            return math.nan, math.nan, math.nan, math.nan
+        return cls._values
+
+
+class _CursorUsage:
+    # Reads the AI code tracking daily stats stored by the Cursor editor in its local state database
+    # (lines of code accepted from Tab and Composer/Agent). No credentials or network access needed.
+    TTL = 30  # seconds between two reads
+    _result = (0.0, math.nan, math.nan)  # (read time, lines accepted today, lines accepted in total)
+
+    @staticmethod
+    def _database() -> Path:
+        if platform.system() == "Windows":
+            base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+        elif platform.system() == "Darwin":
+            base = Path.home() / "Library" / "Application Support"
+        else:
+            base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+        return base / "Cursor" / "User" / "globalStorage" / "state.vscdb"
+
+    @classmethod
+    def get(cls):
+        now = time.time()
+        if now - cls._result[0] < cls.TTL:
+            return cls._result
+        today = total = math.nan
+        database = cls._database()
+        if database.is_file():
+            try:
+                connection = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=1)
+                try:
+                    rows = connection.execute(
+                        "SELECT key, value FROM ItemTable WHERE key LIKE 'aiCodeTracking.dailyStats.%'").fetchall()
+                finally:
+                    connection.close()
+                today = total = 0
+                for key, value in rows:
+                    stats = json.loads(value)
+                    lines = (stats.get("tabAcceptedLines") or 0) + (stats.get("composerAcceptedLines") or 0)
+                    total += lines
+                    if str(key).endswith(datetime.date.today().isoformat()):
+                        today += lines
+            except (sqlite3.Error, ValueError, TypeError, AttributeError):
+                today = total = math.nan
+        cls._result = (now, float(today), float(total))
+        return cls._result
+
+
+class _Weather:
+    # Current weather from Open-Meteo (no API key needed), for WEATHER_LATITUDE / WEATHER_LONGITUDE of config.yaml
+    TTL = 900  # seconds between two requests
+    TTL_ERROR = 120
+    CODES = {0: "CLEAR", 1: "MOSTLY CLEAR", 2: "PARTLY CLOUDY", 3: "OVERCAST", 45: "FOG", 48: "FOG",
+             51: "DRIZZLE", 53: "DRIZZLE", 55: "DRIZZLE", 56: "ICY DRIZZLE", 57: "ICY DRIZZLE",
+             61: "LIGHT RAIN", 63: "RAIN", 65: "HEAVY RAIN", 66: "ICY RAIN", 67: "ICY RAIN",
+             71: "LIGHT SNOW", 73: "SNOW", 75: "HEAVY SNOW", 77: "SNOW GRAINS",
+             80: "SHOWERS", 81: "SHOWERS", 82: "HEAVY SHOWERS", 85: "SNOW SHOWERS", 86: "SNOW SHOWERS",
+             95: "THUNDERSTORM", 96: "THUNDERSTORM", 99: "THUNDERSTORM"}
+    _next = 0.0
+    _values = (math.nan, math.nan, "", "°C")  # (temperature, humidity %, description, unit)
+
+    @classmethod
+    def get(cls):
+        now = time.time()
+        if now >= cls._next:
+            try:
+                import library.config as config
+                settings = config.CONFIG_DATA["config"]
+                imperial = settings.get("WEATHER_UNITS", "metric") == "imperial"
+                query = urllib.parse.urlencode({
+                    "latitude": settings["WEATHER_LATITUDE"], "longitude": settings["WEATHER_LONGITUDE"],
+                    "current": "temperature_2m,relative_humidity_2m,weather_code",
+                    "temperature_unit": "fahrenheit" if imperial else "celsius"})
+                current = _http_get_json("https://api.open-meteo.com/v1/forecast?" + query)["current"]
+                cls._values = (float(current["temperature_2m"]), float(current["relative_humidity_2m"]),
+                               cls.CODES.get(current["weather_code"], ""), "°F" if imperial else "°C")
+                cls._next = now + cls.TTL
+            except (OSError, ValueError, KeyError, TypeError, AttributeError, ImportError):
+                cls._next = now + cls.TTL_ERROR
+        return cls._values
+
+
+class _SimpleData(CustomDataSource):
+    def as_numeric(self) -> float:
+        pass
+
+    def as_string(self) -> str:
+        pass
+
+    def last_values(self) -> List[float]:
+        pass
+
+
+class ClaudeSessionPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _ClaudePlan.get()[0]
+
+    def as_string(self) -> str:
+        return _format_percent(_ClaudePlan.get()[0])
+
+
+class ClaudeSessionReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown(_ClaudePlan.get()[1])
+
+
+class ClaudeWeekPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _ClaudePlan.get()[2]
+
+    def as_string(self) -> str:
+        return _format_percent(_ClaudePlan.get()[2])
+
+
+class ClaudeWeekReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown(_ClaudePlan.get()[3])
+
+
+class ClaudeTokensToday(_SimpleData):
+    def as_string(self) -> str:
+        return _format_count(_ClaudeTokens.get()[1])
+
+
+class ClaudeTokensLast5h(_SimpleData):
+    def as_string(self) -> str:
+        return _format_count(_ClaudeTokens.get()[2])
+
+
+class CursorLinesToday(_SimpleData):
+    def as_string(self) -> str:
+        return _format_count(_CursorUsage.get()[1])
+
+
+class CursorLinesTotal(_SimpleData):
+    def as_string(self) -> str:
+        return _format_count(_CursorUsage.get()[2])
+
+
+class WeatherTemperature(_SimpleData):
+    def as_string(self) -> str:
+        temperature, _, _, unit = _Weather.get()
+        return "  --" + unit if math.isnan(temperature) else f"{temperature:>3.0f}{unit}"
+
+
+class WeatherHumidity(_SimpleData):
+    def as_string(self) -> str:
+        humidity = _Weather.get()[1]
+        return " --% RH" if math.isnan(humidity) else f"{humidity:>3.0f}% RH"
+
+
+class WeatherDescription(_SimpleData):
+    def as_string(self) -> str:
+        return f"{_Weather.get()[2]:<14}"
+
+
+class TopProcess(_SimpleData):
+    # Name and CPU usage (in % of one core, like 'top') of the process using the most CPU
+    def as_string(self) -> str:
+        import psutil
+        name, usage = "", 0.0
+        for process in psutil.process_iter(["name"]):  # psutil keeps processes in cache between calls
+            try:
+                percent = process.cpu_percent(None)
+            except psutil.Error:
+                continue
+            if percent > usage:
+                name, usage = process.info["name"] or "", percent
+        return f"{name[:11]:<11} {min(usage, 9999):>4.0f}%"
