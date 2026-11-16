@@ -440,3 +440,98 @@ class TopProcess(_SimpleData):
             if percent > usage:
                 name, usage = process.info["name"] or "", percent
         return f"{name[:11]:<11} {min(usage, 9999):>4.0f}%"
+
+
+# --- Misc. system sensors: every value is a fixed-width (5 chars) text, '--' when not available on this computer ---
+import shutil
+import subprocess
+
+
+def _format_value(value, unit: str = "") -> str:
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return f"{'--':>5}"
+    text = f"{value:.0f}{unit}" if isinstance(value, (int, float)) else f"{value}{unit}"
+    return f"{text:>5}"
+
+
+class _Cached:
+    # Small cache to avoid reading the same slow data source (e.g. a command) at every refresh
+    _store = {}
+
+    @classmethod
+    def get(cls, key: str, ttl: float, reader):
+        cached = cls._store.get(key)
+        if cached is None or time.time() - cached[0] >= ttl:
+            try:
+                value = reader()
+            except Exception:
+                value = None
+            cached = (time.time(), value)
+            cls._store[key] = cached
+        return cached[1]
+
+
+def _run(command: List[str]) -> str:
+    if shutil.which(command[0]) is None:
+        raise FileNotFoundError(command[0])
+    return subprocess.run(command, capture_output=True, text=True, timeout=3, check=True).stdout
+
+
+def _nvidia_gpu():
+    # (power draw in W, fan speed in %) of the first Nvidia GPU
+    fields = _run(["nvidia-smi", "--query-gpu=power.draw,fan.speed", "--format=csv,noheader,nounits"])
+    power, fan = fields.splitlines()[0].split(",")
+    return float(power), float(fan)
+
+
+class UptimeShort(_SimpleData):
+    # Time since boot: days + hours, or hours + minutes if less than a day
+    def as_string(self) -> str:
+        import psutil
+        return _format_countdown(2 * time.time() - psutil.boot_time())
+
+
+class VpnStatus(_SimpleData):
+    # ON if a VPN / tunnel network interface is up
+    def as_string(self) -> str:
+        import psutil
+        stats = psutil.net_if_stats()
+        active = any(name.lower().startswith(("ppp", "tun", "tap", "wg")) and stat.isup for name, stat in stats.items())
+        return _format_value("ON" if active else "OFF")
+
+
+class SsdTemperature(_SimpleData):
+    def as_string(self) -> str:
+        import psutil
+        sensors = getattr(psutil, "sensors_temperatures", lambda: {})().get("nvme") or []
+        return _format_value(sensors[0].current if sensors else None, "°C")
+
+
+class ProcessCount(_SimpleData):
+    def as_string(self) -> str:
+        import psutil
+        return _format_value(len(psutil.pids()))
+
+
+class GpuPower(_SimpleData):
+    def as_string(self) -> str:
+        gpu = _Cached.get("nvidia", 4, _nvidia_gpu)
+        return _format_value(gpu[0] if gpu else None, "W")
+
+
+class GpuFan(_SimpleData):
+    def as_string(self) -> str:
+        gpu = _Cached.get("nvidia", 4, _nvidia_gpu)
+        return _format_value(gpu[1] if gpu else None, "%")
+
+
+class DockerContainers(_SimpleData):
+    # Number of running Docker containers
+    def as_string(self) -> str:
+        return _format_value(_Cached.get("docker", 30, lambda: len(_run(["docker", "ps", "-q"]).split())))
+
+
+class SwapPercent(_SimpleData):
+    def as_string(self) -> str:
+        import psutil
+        return _format_value(psutil.swap_memory().percent, "%")

@@ -12,6 +12,7 @@ RAM = (255, 60, 172)
 DISK = (255, 159, 28)
 NET = (64, 156, 255)
 PING = (180, 120, 255)
+SYS = (255, 85, 85)
 CLAUDE = (217, 119, 87)
 CURSOR = (225, 225, 225)
 DIM = (90, 84, 3)
@@ -75,6 +76,10 @@ def icon(name, x, y, col=Y):
     elif name == 'clock':
         d.ellipse([x, y, x + 10, y + 10], outline=col)
         d.line([(x + 5, y + 2), (x + 5, y + 5), (x + 7, y + 6)], fill=col)
+    elif name == 'sys':
+        d.rectangle([x, y + 1, x + 13, y + 9], outline=col)
+        d.line([(x + 6, y + 10), (x + 6, y + 12)], fill=col); d.line([(x + 7, y + 10), (x + 7, y + 12)], fill=col)
+        d.line([(x + 3, y + 12), (x + 10, y + 12)], fill=col)
     elif name == 'fan':
         d.ellipse([x, y, x + 12, y + 12], outline=col)
         d.line([(x + 2, y + 2), (x + 10, y + 10)], fill=col); d.line([(x + 10, y + 2), (x + 2, y + 10)], fill=col)
@@ -94,7 +99,7 @@ COLS = (4, 163, 322)
 ROWS = (38, 132, 226)
 W, H = 154, 90
 cells = (('cpu', 'CPU', CPU), ('gpu', 'GPU', GPU), ('ram', 'RAM', RAM),
-         ('disk', 'DISK', DISK), ('net', 'NET', NET), ('ping', 'PING', PING))
+         ('disk', 'DISK', DISK), ('net', 'NET', NET), ('sys', 'SYSTEM', SYS))
 for i, (ic, text, col) in enumerate(cells):
     x, y = COLS[i % 3], ROWS[i // 3]
     panel(x, y, W, H, col)
@@ -112,9 +117,12 @@ d.text((x + 6, y + 73), 'TOTAL', font=f11, fill=DISK)
 x, y = COLS[1], ROWS[1]
 icon('down', x + 6, y + 24, NET)
 icon('up', x + 6, y + 58, Y)
-# Ping / uptime
+icon('ping', x + 54, y + 5, PING)
+# System
 x, y = COLS[2], ROWS[1]
-d.text((x + 6, y + 76), 'UP', font=f11, fill=PING)
+for row, (left, right) in enumerate((('UP', 'VPN'), ('SSD', 'PROC'), ('GPU', 'GFAN'), ('DOCK', 'SWAP'))):
+    d.text((x + 6, y + 24 + row * 16), left, font=f11, fill=SYS)
+    d.text((x + 80, y + 24 + row * 16), right, font=f11, fill=SYS)
 # Claude (2 columns wide)
 x, y = COLS[0], ROWS[2]
 panel(x, y, 313, H, CLAUDE)

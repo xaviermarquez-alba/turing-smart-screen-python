@@ -300,37 +300,12 @@ STATS:
     INTERVAL: 2
     TEXT:
       SHOW: True
-      X: 328
-      Y: 154
+      X: 229
+      Y: 138
       FONT: generale-mono/GeneraleMonoA.ttf
-      FONT_SIZE: 20
+      FONT_SIZE: 12
       FONT_COLOR: 180, 120, 255
       BACKGROUND_IMAGE: background.png
-    LINE_GRAPH:
-      SHOW: True
-      X: 328
-      Y: 178
-      WIDTH: 142
-      HEIGHT: 26
-      MIN_VALUE: 0
-      MAX_VALUE: 100
-      HISTORY_SIZE: 60
-      AUTOSCALE: True
-      LINE_COLOR: 180, 120, 255
-      LINE_WIDTH: 1
-      AXIS: False
-      BACKGROUND_IMAGE: background.png
-  UPTIME:
-    INTERVAL: 1
-    FORMATTED:
-      TEXT:
-        SHOW: True
-        X: 348
-        Y: 208
-        FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 11
-        FONT_COLOR: 235, 235, 235
-        BACKGROUND_IMAGE: background.png
   DATE:
     INTERVAL: 1
     DAY:
@@ -360,6 +335,78 @@ STATS:
         ANCHOR: lt
   CUSTOM:
     INTERVAL: 5
+    UptimeShort:
+      TEXT:
+        SHOW: True
+        X: 346
+        Y: 156
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    VpnStatus:
+      TEXT:
+        SHOW: True
+        X: 432
+        Y: 156
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    SsdTemperature:
+      TEXT:
+        SHOW: True
+        X: 360
+        Y: 172
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    ProcessCount:
+      TEXT:
+        SHOW: True
+        X: 432
+        Y: 172
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    GpuPower:
+      TEXT:
+        SHOW: True
+        X: 360
+        Y: 188
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    GpuFan:
+      TEXT:
+        SHOW: True
+        X: 432
+        Y: 188
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    DockerContainers:
+      TEXT:
+        SHOW: True
+        X: 360
+        Y: 204
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    SwapPercent:
+      TEXT:
+        SHOW: True
+        X: 432
+        Y: 204
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 11
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
     TopProcess:
       TEXT:
         SHOW: True
