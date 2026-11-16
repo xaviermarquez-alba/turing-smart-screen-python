@@ -131,15 +131,16 @@ def _format_percent(value: float) -> str:
 
 
 def _format_countdown(timestamp: float) -> str:
-    # Fixed-width (6 chars) time left before the given timestamp, e.g. ' 2h13m', ' 3d04h'
+    # Fixed-width (7 chars) time left before the given timestamp: days + hours, or hours + minutes if less than a day
+    # e.g. ' 3d 4h', ' 2h 13m'
     if timestamp is None or math.isnan(timestamp):
-        return "    --"
+        return "     --"
     minutes = max(0, int((timestamp - time.time()) / 60))
     if minutes >= 24 * 60:
-        text = f"{minutes // 1440}d{minutes % 1440 // 60:02d}h"
+        text = f"{minutes // 1440}d {minutes % 1440 // 60}h"
     else:
-        text = f"{minutes // 60}h{minutes % 60:02d}m"
-    return f"{text:>6}"
+        text = f"{minutes // 60}h {minutes % 60}m"
+    return f"{text:>7}"
 
 
 def _claude_dir() -> Path:
