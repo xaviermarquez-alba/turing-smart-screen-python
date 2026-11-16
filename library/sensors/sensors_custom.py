@@ -254,11 +254,18 @@ class _ClaudePlan:
         return cls._values
 
 
-class _CursorUsage:
-    # Reads the AI code tracking daily stats stored by the Cursor editor in its local state database
-    # (lines of code accepted from Tab and Composer/Agent). No credentials or network access needed.
-    TTL = 30  # seconds between two reads
-    _result = (0.0, math.nan, math.nan)  # (read time, lines accepted today, lines accepted in total)
+class _CursorPlan:
+    # Reads the Cursor plan usage (Cursor models and other models, in % of the included usage) from Cursor usage
+    # endpoint, using the access token stored by the Cursor editor on this computer in its local state database.
+    # The token is only ever sent to api2.cursor.sh.
+    # This endpoint is not documented: values are shown as '--' if it is unavailable.
+    URL = "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage"
+    TTL = 300  # seconds between two requests
+    TTL_ERROR = 900  # seconds to wait after a failed request
+    MAX_AGE = 3600  # seconds during which the last good values are kept if requests fail
+    _next = 0.0
+    _updated = 0.0
+    _values = (math.nan, math.nan, math.nan)  # (Cursor models %, other models %, billing cycle end time)
 
     @staticmethod
     def _database() -> Path:
@@ -273,29 +280,31 @@ class _CursorUsage:
     @classmethod
     def get(cls):
         now = time.time()
-        if now - cls._result[0] < cls.TTL:
-            return cls._result
-        today = total = math.nan
-        database = cls._database()
-        if database.is_file():
+        if now >= cls._next:
             try:
-                connection = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=1)
+                connection = sqlite3.connect(cls._database().as_uri() + "?mode=ro", uri=True, timeout=1)
                 try:
-                    rows = connection.execute(
-                        "SELECT key, value FROM ItemTable WHERE key LIKE 'aiCodeTracking.dailyStats.%'").fetchall()
+                    token = connection.execute(
+                        "SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'").fetchone()[0]
                 finally:
                     connection.close()
-                today = total = 0
-                for key, value in rows:
-                    stats = json.loads(value)
-                    lines = (stats.get("tabAcceptedLines") or 0) + (stats.get("composerAcceptedLines") or 0)
-                    total += lines
-                    if str(key).endswith(datetime.date.today().isoformat()):
-                        today += lines
-            except (sqlite3.Error, ValueError, TypeError, AttributeError):
-                today = total = math.nan
-        cls._result = (now, float(today), float(total))
-        return cls._result
+                request = urllib.request.Request(cls.URL, data=b"{}", headers={
+                    "Authorization": "Bearer " + token, "Content-Type": "application/json",
+                    "Connect-Protocol-Version": "1"})
+                with urllib.request.urlopen(request, timeout=5) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                usage = data.get("planUsage") or {}
+                cycle_end = data.get("billingCycleEnd")
+                cls._values = (float(usage.get("autoPercentUsed", math.nan)),
+                               float(usage.get("apiPercentUsed", math.nan)),
+                               float(cycle_end) / 1000 if cycle_end else math.nan)
+                cls._updated = now
+                cls._next = now + cls.TTL
+            except (OSError, sqlite3.Error, ValueError, KeyError, TypeError, AttributeError):
+                cls._next = now + cls.TTL_ERROR
+        if now - cls._updated > cls.MAX_AGE:
+            return math.nan, math.nan, math.nan
+        return cls._values
 
 
 class _Weather:
@@ -379,14 +388,25 @@ class ClaudeTokensLast5h(_SimpleData):
         return _format_count(_ClaudeTokens.get()[2])
 
 
-class CursorLinesToday(_SimpleData):
+class CursorModelsPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _CursorPlan.get()[0]
+
     def as_string(self) -> str:
-        return _format_count(_CursorUsage.get()[1])
+        return _format_percent(_CursorPlan.get()[0])
 
 
-class CursorLinesTotal(_SimpleData):
+class CursorOtherPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _CursorPlan.get()[1]
+
     def as_string(self) -> str:
-        return _format_count(_CursorUsage.get()[2])
+        return _format_percent(_CursorPlan.get()[1])
+
+
+class CursorReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown(_CursorPlan.get()[2])
 
 
 class WeatherTemperature(_SimpleData):

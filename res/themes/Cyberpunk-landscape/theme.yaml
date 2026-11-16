@@ -472,21 +472,52 @@ STATS:
         FONT_SIZE: 14
         FONT_COLOR: 235, 235, 235
         BACKGROUND_IMAGE: background.png
-    CursorLinesToday:
+    CursorModelsPercent:
       TEXT:
         SHOW: True
-        X: 382
-        Y: 252
+        X: 436
+        Y: 250
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225
         BACKGROUND_IMAGE: background.png
-    CursorLinesTotal:
+      GRAPH:
+        SHOW: True
+        X: 368
+        Y: 251
+        WIDTH: 62
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 225, 225, 225
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    CursorOtherPercent:
       TEXT:
         SHOW: True
-        X: 382
-        Y: 272
+        X: 436
+        Y: 270
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
+        FONT_COLOR: 225, 225, 225
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 368
+        Y: 271
+        WIDTH: 62
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 225, 225, 225
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    CursorReset:
+      TEXT:
+        SHOW: True
+        X: 414
+        Y: 294
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225
         BACKGROUND_IMAGE: background.png

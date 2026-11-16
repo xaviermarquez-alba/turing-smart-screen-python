@@ -130,8 +130,9 @@ d.text((x + 282, y + 68), 'TOK', font=f11, fill=CLAUDE)
 x, y = COLS[2], ROWS[2]
 panel(x, y, W, H, CURSOR)
 title(x, y, 'cursor', 'CURSOR', CURSOR)
-d.text((x + 6, y + 28), 'TODAY', font=f11, fill=CURSOR)
-d.text((x + 6, y + 48), 'TOTAL', font=f11, fill=CURSOR)
-d.text((x + 6, y + 70), 'LINES ACCEPTED', font=f11, fill=(110, 110, 110))
+d.text((x + 6, y + 25), 'MODEL', font=f11, fill=CURSOR)
+d.text((x + 6, y + 45), 'OTHER', font=f11, fill=CURSOR)
+icon('clock', x + 6, y + 68, CURSOR)
+d.text((x + 22, y + 69), 'RESETS', font=f11, fill=CURSOR)
 
 im.save('res/themes/Cyberpunk-landscape/background.png')
