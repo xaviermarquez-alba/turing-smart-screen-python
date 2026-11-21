@@ -106,6 +106,7 @@ import base64
 import datetime
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import time
@@ -360,10 +361,14 @@ class _GooglePlan:
     # Antigravity renews the token whenever it is used.
     # This endpoint is not documented: values are shown as '--' if it is unavailable.
     URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
-    TTL = 300  # seconds between two requests
+    TTL = 120  # seconds between two requests
     TTL_ERROR = 900  # seconds to wait after a failed request
+    TTL_EXPIRED = 30  # seconds before reading the keyring again while the token is expired (no request is sent)
     _next = 0.0
     _pools = ((math.nan, math.nan), (math.nan, math.nan))  # (% used, reset time) for Gemini models and other models
+
+    class _TokenExpired(Exception):
+        pass
 
     @staticmethod
     def _token() -> str:
@@ -374,7 +379,15 @@ class _GooglePlan:
         secret = secret.strip()
         if secret.startswith("go-keyring-base64:"):
             secret = base64.b64decode(secret[len("go-keyring-base64:"):]).decode("utf-8")
-        return json.loads(secret)["token"]["access_token"]
+        token = json.loads(secret)["token"]
+        try:  # Expiry looks like 2026-11-21T16:30:33.57156249-03:00
+            expiry = re.sub(r"\.\d+", "", token["expiry"]).replace("Z", "+00:00")
+            expired = time.time() >= datetime.datetime.fromisoformat(expiry).timestamp()
+        except (KeyError, TypeError, ValueError):
+            expired = False  # Unknown expiry: let the request tell
+        if expired:
+            raise _GooglePlan._TokenExpired()
+        return token["access_token"]
 
     @classmethod
     def get(cls):
@@ -396,6 +409,8 @@ class _GooglePlan:
                         pools[model.get("modelProvider") != "MODEL_PROVIDER_GOOGLE"].append((used, reset))
                 cls._pools = tuple(max(pool, default=(math.nan, math.nan)) for pool in pools)
                 cls._next = now + cls.TTL
+            except cls._TokenExpired:
+                cls._next = now + cls.TTL_EXPIRED
             except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, AttributeError):
                 cls._next = now + cls.TTL_ERROR
         # A window that has reset since the last successful request is back to 0 %
