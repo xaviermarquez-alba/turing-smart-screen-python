@@ -102,15 +102,19 @@ class ExampleCustomTextOnlyData(CustomDataSource):
 
 
 # --- Claude Code / Cursor usage and keyless weather sensors (used by the Cyberpunk-landscape theme) ---
+import base64
 import datetime
 import json
 import os
 import sqlite3
+import subprocess
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+from library.log import logger
 
 
 def _format_count(value: float) -> str:
@@ -221,11 +225,11 @@ class _ClaudePlan:
     # This endpoint is not documented: values are shown as '--' if it is unavailable.
     URL = "https://api.anthropic.com/api/oauth/usage"
     TTL = 300  # seconds between two requests
-    TTL_ERROR = 900  # seconds to wait after a failed request
+    TTL_ERROR = 300  # seconds to wait after a failed request
     MAX_AGE = 3600  # seconds during which the last good values are kept if requests fail
     _next = 0.0
     _updated = 0.0
-    _values = (math.nan, math.nan, math.nan, math.nan)  # (5h %, 5h reset time, 7d %, 7d reset time)
+    _values = (math.nan, math.nan, math.nan, math.nan, math.nan, math.nan)
 
     @staticmethod
     def _window(data: dict, name: str):
@@ -236,6 +240,32 @@ class _ClaudePlan:
         reset = datetime.datetime.fromisoformat(reset.replace("Z", "+00:00")).timestamp() if reset else math.nan
         return percent, reset
 
+    @staticmethod
+    def _fable_limit(data: dict):
+        try:
+            limits = data.get("limits")
+            if not isinstance(limits, list):
+                return math.nan, math.nan
+            for entry in limits:
+                if not isinstance(entry, dict) or entry.get("kind") != "weekly_scoped":
+                    continue
+                scope = entry.get("scope") or {}
+                model = scope.get("model") if isinstance(scope, dict) else {}
+                if not isinstance(model, dict):
+                    continue
+                name = model.get("display_name")
+                if name is None or str(name).lower() != "fable":
+                    continue
+                percent = entry.get("percent")
+                reset = entry.get("resets_at")
+                percent = float(percent) if percent is not None else math.nan
+                reset = (datetime.datetime.fromisoformat(reset.replace("Z", "+00:00")).timestamp()
+                         if reset else math.nan)
+                return percent, reset
+        except (TypeError, ValueError, KeyError, AttributeError):
+            pass
+        return math.nan, math.nan
+
     @classmethod
     def get(cls):
         now = time.time()
@@ -245,13 +275,27 @@ class _ClaudePlan:
                     token = json.load(file)["claudeAiOauth"]["accessToken"]
                 data = _http_get_json(cls.URL, {"Authorization": "Bearer " + token,
                                                 "anthropic-beta": "oauth-2025-04-20"})
-                cls._values = cls._window(data, "five_hour") + cls._window(data, "seven_day")
+                cls._values = (cls._window(data, "five_hour") + cls._window(data, "seven_day")
+                               + cls._fable_limit(data))
                 cls._updated = now
                 cls._next = now + cls.TTL
-            except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            except urllib.error.HTTPError as error:
+                delay = cls.TTL_ERROR
+                retry_after = error.headers.get("Retry-After") if error.headers else None
+                if retry_after is not None:
+                    try:
+                        seconds = int(retry_after)
+                        if seconds > 0:
+                            delay = max(cls.TTL_ERROR, seconds)
+                    except (ValueError, TypeError):
+                        pass
+                logger.warning("Claude usage refresh failed: HTTPError %s, retry in %s s", error.code, delay)
+                cls._next = now + delay
+            except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+                logger.warning("Claude usage refresh failed: %s, retry in %s s", type(error).__name__, cls.TTL_ERROR)
                 cls._next = now + cls.TTL_ERROR
         if now - cls._updated > cls.MAX_AGE:
-            return math.nan, math.nan, math.nan, math.nan
+            return math.nan, math.nan, math.nan, math.nan, math.nan, math.nan
         return cls._values
 
 
@@ -306,6 +350,56 @@ class _CursorPlan:
         if now - cls._updated > cls.MAX_AGE:
             return math.nan, math.nan, math.nan
         return cls._values
+
+
+class _GooglePlan:
+    # Reads the Google AI plan quotas of Antigravity (Gemini models and other models, in % used of the current window)
+    # from Google Code Assist endpoint, using the token stored by Antigravity in the system keyring (Linux, macOS).
+    # The token is only ever sent to cloudcode-pa.googleapis.com.
+    # The token is not refreshed here: once it has expired the last values are kept until their window resets, as
+    # Antigravity renews the token whenever it is used.
+    # This endpoint is not documented: values are shown as '--' if it is unavailable.
+    URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
+    TTL = 300  # seconds between two requests
+    TTL_ERROR = 900  # seconds to wait after a failed request
+    _next = 0.0
+    _pools = ((math.nan, math.nan), (math.nan, math.nan))  # (% used, reset time) for Gemini models and other models
+
+    @staticmethod
+    def _token() -> str:
+        if platform.system() == "Darwin":
+            secret = _run(["security", "find-generic-password", "-s", "gemini", "-a", "antigravity", "-w"])
+        else:
+            secret = _run(["secret-tool", "lookup", "service", "gemini", "username", "antigravity"])
+        secret = secret.strip()
+        if secret.startswith("go-keyring-base64:"):
+            secret = base64.b64decode(secret[len("go-keyring-base64:"):]).decode("utf-8")
+        return json.loads(secret)["token"]["access_token"]
+
+    @classmethod
+    def get(cls):
+        now = time.time()
+        if now >= cls._next:
+            try:
+                request = urllib.request.Request(cls.URL, data=b"{}", headers={
+                    "Authorization": "Bearer " + cls._token(), "Content-Type": "application/json",
+                    "User-Agent": "antigravity"})
+                with urllib.request.urlopen(request, timeout=5) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                pools = ([], [])
+                for model in data["models"].values():
+                    quota = model.get("quotaInfo") or {}
+                    reset = quota.get("resetTime")
+                    if reset:  # Models without a reset time are not limited
+                        used = 100 * (1 - float(quota.get("remainingFraction", 0)))
+                        reset = datetime.datetime.fromisoformat(reset.replace("Z", "+00:00")).timestamp()
+                        pools[model.get("modelProvider") != "MODEL_PROVIDER_GOOGLE"].append((used, reset))
+                cls._pools = tuple(max(pool, default=(math.nan, math.nan)) for pool in pools)
+                cls._next = now + cls.TTL
+            except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, AttributeError):
+                cls._next = now + cls.TTL_ERROR
+        # A window that has reset since the last successful request is back to 0 %
+        return tuple((0.0, math.nan) if now >= reset else (used, reset) for used, reset in cls._pools)
 
 
 class _Weather:
@@ -379,6 +473,19 @@ class ClaudeWeekReset(_SimpleData):
         return _format_countdown(_ClaudePlan.get()[3])
 
 
+class ClaudeFablePercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _ClaudePlan.get()[4]
+
+    def as_string(self) -> str:
+        return _format_percent(_ClaudePlan.get()[4])
+
+
+class ClaudeFableReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown(_ClaudePlan.get()[5])
+
+
 class ClaudeTokensToday(_SimpleData):
     def as_string(self) -> str:
         return _format_count(_ClaudeTokens.get()[1])
@@ -408,6 +515,29 @@ class CursorOtherPercent(_SimpleData):
 class CursorReset(_SimpleData):
     def as_string(self) -> str:
         return _format_countdown(_CursorPlan.get()[2])
+
+
+class GoogleGeminiPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _GooglePlan.get()[0][0]
+
+    def as_string(self) -> str:
+        return _format_percent(_GooglePlan.get()[0][0])
+
+
+class GoogleOtherPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _GooglePlan.get()[1][0]
+
+    def as_string(self) -> str:
+        return _format_percent(_GooglePlan.get()[1][0])
+
+
+class GoogleReset(_SimpleData):
+    def as_string(self) -> str:
+        # Next reset among the two windows
+        return _format_countdown(min((reset for _, reset in _GooglePlan.get() if not math.isnan(reset)),
+                                     default=math.nan))
 
 
 class WeatherTemperature(_SimpleData):

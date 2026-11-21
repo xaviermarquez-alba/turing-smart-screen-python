@@ -15,6 +15,7 @@ PING = (180, 120, 255)
 SYS = (255, 85, 85)
 CLAUDE = (217, 119, 87)
 CURSOR = (225, 225, 225)
+GOOGLE = (66, 133, 244)
 DIM = (90, 84, 3)
 FONT = 'res/fonts/generale-mono/GeneraleMonoA.ttf'
 f12 = ImageFont.truetype(FONT, 12)
@@ -65,6 +66,9 @@ def icon(name, x, y, col=Y):
         for a in range(0, 180, 30):
             dx, dy = 6.5 * math.cos(math.radians(a)), 6.5 * math.sin(math.radians(a))
             d.line([(x + 6.5 - dx, y + 6.5 - dy), (x + 6.5 + dx, y + 6.5 + dy)], fill=col, width=2)
+    elif name == 'google':
+        d.arc([x, y, x + 12, y + 12], 0, 315, fill=col, width=2)
+        d.line([(x + 6, y + 6), (x + 12, y + 6)], fill=col, width=2)
     elif name == 'cursor':
         d.polygon([(x + 2, y), (x + 2, y + 11), (x + 5, y + 8), (x + 8, y + 13), (x + 10, y + 12), (x + 7, y + 7), (x + 11, y + 7)],
                   outline=col)
@@ -123,24 +127,22 @@ x, y = COLS[2], ROWS[1]
 for row, (left, right) in enumerate((('UP', 'VPN'), ('SSD', 'PROC'), ('GPU', 'GFAN'), ('DOCK', 'SWAP'))):
     d.text((x + 6, y + 24 + row * 16), left, font=f11, fill=SYS)
     d.text((x + 80, y + 24 + row * 16), right, font=f11, fill=SYS)
-# Claude (2 columns wide)
-x, y = COLS[0], ROWS[2]
-panel(x, y, 313, H, CLAUDE)
+# Claude, Google, Cursor
+x, y = 4, ROWS[2]
+panel(x, y, 200, H, CLAUDE)
 title(x, y, 'claude', 'CLAUDE', CLAUDE)
-d.text((x + 6, y + 24), '5H', font=f12, fill=CLAUDE)
-d.text((x + 6, y + 44), '7D', font=f12, fill=CLAUDE)
-icon('clock', x + 238, y + 24, CLAUDE)
-icon('clock', x + 238, y + 44, CLAUDE)
-d.text((x + 6, y + 68), 'TODAY', font=f11, fill=CLAUDE)
-d.text((x + 146, y + 68), 'LAST 5H', font=f11, fill=CLAUDE)
-d.text((x + 282, y + 68), 'TOK', font=f11, fill=CLAUDE)
-# Cursor
-x, y = COLS[2], ROWS[2]
-panel(x, y, W, H, CURSOR)
-title(x, y, 'cursor', 'CURSOR', CURSOR)
-d.text((x + 6, y + 25), 'MODEL', font=f11, fill=CURSOR)
-d.text((x + 6, y + 45), 'OTHER', font=f11, fill=CURSOR)
-icon('clock', x + 6, y + 68, CURSOR)
-d.text((x + 22, y + 69), 'RESETS', font=f11, fill=CURSOR)
+for row, text in enumerate(('5H', '7D', 'FB')):
+    d.text((x + 6, y + 22 + row * 16), text, font=f12, fill=CLAUDE)
+    icon('clock', x + 125, y + 22 + row * 16, CLAUDE)
+d.text((x + 6, y + 73), 'TODAY', font=f11, fill=CLAUDE)
+d.text((x + 108, y + 73), '5H', font=f11, fill=CLAUDE)
+for x, name, text, col, rows in ((209, 'google', 'GOOGLE', GOOGLE, ('GEM', 'OTH')),
+                                 (345, 'cursor', 'CURSOR', CURSOR, ('MODEL', 'OTHER'))):
+    panel(x, y, 131, H, col)
+    title(x, y, name, text, col)
+    d.text((x + 6, y + 25), rows[0], font=f11, fill=col)
+    d.text((x + 6, y + 45), rows[1], font=f11, fill=col)
+    icon('clock', x + 6, y + 68, col)
+    d.text((x + 22, y + 69), 'RESETS', font=f11, fill=col)
 
 im.save('res/themes/Cyberpunk-landscape/background.png')

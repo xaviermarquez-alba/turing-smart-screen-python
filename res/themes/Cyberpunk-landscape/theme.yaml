@@ -446,17 +446,17 @@ STATS:
     ClaudeSessionPercent:
       TEXT:
         SHOW: True
-        X: 194
-        Y: 249
+        X: 88
+        Y: 247
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 14
         FONT_COLOR: 217, 119, 87
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 36
-        Y: 250
-        WIDTH: 150
+        X: 30
+        Y: 248
+        WIDTH: 54
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -466,8 +466,8 @@ STATS:
     ClaudeSessionReset:
       TEXT:
         SHOW: True
-        X: 258
-        Y: 250
+        X: 143
+        Y: 248
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 235, 235, 235
@@ -475,17 +475,17 @@ STATS:
     ClaudeWeekPercent:
       TEXT:
         SHOW: True
-        X: 194
-        Y: 269
+        X: 88
+        Y: 263
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 14
         FONT_COLOR: 217, 119, 87
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 36
-        Y: 270
-        WIDTH: 150
+        X: 30
+        Y: 264
+        WIDTH: 54
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -495,8 +495,37 @@ STATS:
     ClaudeWeekReset:
       TEXT:
         SHOW: True
-        X: 258
-        Y: 270
+        X: 143
+        Y: 264
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    ClaudeFablePercent:
+      TEXT:
+        SHOW: True
+        X: 88
+        Y: 279
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 14
+        FONT_COLOR: 217, 119, 87
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 30
+        Y: 280
+        WIDTH: 54
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 217, 119, 87
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    ClaudeFableReset:
+      TEXT:
+        SHOW: True
+        X: 143
+        Y: 280
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 235, 235, 235
@@ -504,25 +533,25 @@ STATS:
     ClaudeTokensToday:
       TEXT:
         SHOW: True
-        X: 52
-        Y: 292
+        X: 49
+        Y: 298
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
         FONT_COLOR: 235, 235, 235
         BACKGROUND_IMAGE: background.png
     ClaudeTokensLast5h:
       TEXT:
         SHOW: True
-        X: 208
-        Y: 292
+        X: 129
+        Y: 298
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
         FONT_COLOR: 235, 235, 235
         BACKGROUND_IMAGE: background.png
     CursorModelsPercent:
       TEXT:
         SHOW: True
-        X: 436
+        X: 440
         Y: 250
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -530,9 +559,9 @@ STATS:
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 368
+        X: 392
         Y: 251
-        WIDTH: 62
+        WIDTH: 44
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -542,7 +571,7 @@ STATS:
     CursorOtherPercent:
       TEXT:
         SHOW: True
-        X: 436
+        X: 440
         Y: 270
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -550,9 +579,9 @@ STATS:
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 368
+        X: 392
         Y: 271
-        WIDTH: 62
+        WIDTH: 44
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -562,9 +591,58 @@ STATS:
     CursorReset:
       TEXT:
         SHOW: True
-        X: 414
+        X: 416
         Y: 294
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225
+        BACKGROUND_IMAGE: background.png
+    GoogleGeminiPercent:
+      TEXT:
+        SHOW: True
+        X: 303
+        Y: 250
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 241
+        Y: 251
+        WIDTH: 58
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 66, 133, 244
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    GoogleOtherPercent:
+      TEXT:
+        SHOW: True
+        X: 303
+        Y: 270
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 241
+        Y: 271
+        WIDTH: 58
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 66, 133, 244
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    GoogleReset:
+      TEXT:
+        SHOW: True
+        X: 278
+        Y: 294
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
         BACKGROUND_IMAGE: background.png
