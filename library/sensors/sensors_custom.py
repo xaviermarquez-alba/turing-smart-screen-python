@@ -235,6 +235,53 @@ class _ClaudeTokens:
         return cls._result
 
 
+class _ClaudeApiCredit:
+    # Sums this month's Anthropic API spend (USD) from the local delegation log
+    # (~/.claude/delegation/log.jsonl): lines with kind "run", pool "anthropic-api" and a cost_usd whose timestamp
+    # falls in the current calendar month (local time). Malformed lines are skipped. No credentials or network.
+    # The monthly budget is 100 USD, or DLOG_API_BUDGET_USD when that variable parses as a float greater than 0.
+    TTL = 60  # seconds between two reads
+    _read = 0.0
+    _spent = math.nan
+
+    @staticmethod
+    def _budget() -> float:
+        try:
+            budget = float(os.environ["DLOG_API_BUDGET_USD"])
+        except (KeyError, TypeError, ValueError):
+            return 100.0
+        return budget if budget > 0 else 100.0
+
+    @classmethod
+    def get(cls):
+        now = time.time()
+        budget = cls._budget()
+        if now - cls._read < cls.TTL:
+            return cls._spent, budget
+        cls._read = now
+        try:
+            month = datetime.datetime.now().astimezone()
+            spent = 0.0
+            with open(_claude_dir() / "delegation" / "log.jsonl", "r", encoding="utf-8", errors="ignore") as file:
+                for line in file:
+                    try:
+                        data = json.loads(line)
+                        if data.get("kind") != "run" or data.get("pool") != "anthropic-api":
+                            continue
+                        cost = data.get("cost_usd")
+                        if cost is None:
+                            continue
+                        timestamp = datetime.datetime.fromisoformat(data["ts"]).astimezone()
+                        if timestamp.year == month.year and timestamp.month == month.month:
+                            spent += float(cost)
+                    except (ValueError, KeyError, TypeError, AttributeError):
+                        continue
+            cls._spent = spent
+        except OSError:
+            cls._spent = math.nan
+        return cls._spent, budget
+
+
 class _ClaudePlan:
     # Reads the Claude subscription usage (5-hour session and 7-day limits) from Anthropic usage endpoint, using the
     # OAuth token stored by Claude Code on this computer. The token is only ever sent to api.anthropic.com.
@@ -316,8 +363,9 @@ class _ClaudePlan:
 
 
 class _CursorPlan:
-    # Reads the Cursor plan usage (Cursor models and other models, in % of the included usage) from Cursor usage
-    # endpoint, using the access token stored by the Cursor editor on this computer in its local state database.
+    # Reads the Cursor plan usage from the Cursor usage endpoint, using the access token stored by the Cursor editor
+    # on this computer in its local state database. The first value (autoPercentUsed) is the bucket shared by Grok
+    # and Composer and the second (apiPercentUsed) is the premium models bucket (both in % of the included usage).
     # The token is only ever sent to api2.cursor.sh.
     # This endpoint is not documented: values are shown as '--' if it is unavailable.
     URL = "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage"
@@ -326,7 +374,7 @@ class _CursorPlan:
     MAX_AGE = 3600  # seconds during which the last good values are kept if requests fail
     _next = 0.0
     _updated = 0.0
-    _values = (math.nan, math.nan, math.nan)  # (Cursor models %, other models %, billing cycle end time)
+    _values = (math.nan, math.nan, math.nan)  # (Grok and Composer %, premium models %, billing cycle end time)
 
     @staticmethod
     def _database() -> Path:
@@ -370,20 +418,20 @@ class _CursorPlan:
 
 class _GooglePlan:
     # Reads the Google AI plan quotas of Antigravity (5-hour and weekly limits for Gemini models and other models,
-    # in % used) from Google Code Assist endpoint, using the token stored by Antigravity in the system keyring
-    # (Linux, macOS). The token is only ever sent to cloudcode-pa.googleapis.com.
+    # plus the Gemini 4 Argon weekly quota, in % used) from Google Code Assist endpoint, using the token stored by
+    # Antigravity in the system keyring (Linux, macOS). The token is only ever sent to cloudcode-pa.googleapis.com.
     # The token is not refreshed here: once it has expired the last values are kept until their window resets, as
     # Antigravity renews the token whenever it is used.
     # This endpoint is not documented: values are shown as '--' if it is unavailable.
     URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
     # Google only returns the Gemini group to the Antigravity CLI client name
     USER_AGENT = "antigravity/cli/1.5.14 (linux/amd64)"
-    BUCKETS = ("gemini-5h", "gemini-weekly", "3p-5h", "3p-weekly")
+    BUCKETS = ("gemini-5h", "gemini-weekly", "3p-5h", "3p-weekly", "gemini-argon-wtu-weekly")
     TTL = 120  # seconds between two requests
     TTL_ERROR = 900  # seconds to wait after a failed request
     TTL_EXPIRED = 30  # seconds before reading the keyring again while the token is expired (no request is sent)
     _next = 0.0
-    _pools = ((math.nan, math.nan),) * 4  # (% used, reset time) for gemini-5h, gemini-weekly, 3p-5h, 3p-weekly
+    _pools = ((math.nan, math.nan),) * 5  # (% used, reset time) for each of BUCKETS
 
     class _TokenExpired(Exception):
         pass
@@ -523,6 +571,29 @@ class ClaudeFableReset(_SimpleData):
         return _format_countdown(_ClaudePlan.get()[5])
 
 
+class ClaudeApiPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        spent, budget = _ClaudeApiCredit.get()
+        if math.isnan(spent):
+            return math.nan
+        return min(100.0, 100.0 * spent / budget)
+
+    def as_string(self) -> str:
+        return _format_percent(self.as_numeric())
+
+
+class ClaudeApiSpent(_SimpleData):
+    def as_string(self) -> str:
+        spent = _ClaudeApiCredit.get()[0]
+        if math.isnan(spent):
+            text = "--"
+        elif spent < 100:
+            text = f"${spent:.2f}"
+        else:
+            text = f"${spent:.0f}"
+        return f"{text:>7}"
+
+
 class ClaudeTokensToday(_SimpleData):
     def as_string(self) -> str:
         return _format_count(_ClaudeTokens.get()[1])
@@ -604,6 +675,19 @@ class GoogleOtherWeekPercent(_SimpleData):
 class GoogleOtherWeekReset(_SimpleData):
     def as_string(self) -> str:
         return _format_countdown_short(_GooglePlan.get()[3][1])
+
+
+class GoogleArgonWeekPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _GooglePlan.get()[4][0]
+
+    def as_string(self) -> str:
+        return _format_percent(_GooglePlan.get()[4][0])
+
+
+class GoogleArgonWeekReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown_short(_GooglePlan.get()[4][1])
 
 
 class WeatherTemperature(_SimpleData):

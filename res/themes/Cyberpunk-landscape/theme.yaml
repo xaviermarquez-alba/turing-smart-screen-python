@@ -449,14 +449,14 @@ STATS:
         X: 88
         Y: 247
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
         FONT_COLOR: 217, 119, 87
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 30
+        X: 37
         Y: 248
-        WIDTH: 54
+        WIDTH: 47
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -476,16 +476,16 @@ STATS:
       TEXT:
         SHOW: True
         X: 88
-        Y: 263
+        Y: 260
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
         FONT_COLOR: 217, 119, 87
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 30
-        Y: 264
-        WIDTH: 54
+        X: 37
+        Y: 261
+        WIDTH: 47
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -496,7 +496,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 143
-        Y: 264
+        Y: 261
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 235, 235, 235
@@ -505,16 +505,16 @@ STATS:
       TEXT:
         SHOW: True
         X: 88
-        Y: 279
+        Y: 273
         FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 14
+        FONT_SIZE: 12
         FONT_COLOR: 217, 119, 87
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 30
-        Y: 280
-        WIDTH: 54
+        X: 37
+        Y: 274
+        WIDTH: 47
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -525,7 +525,36 @@ STATS:
       TEXT:
         SHOW: True
         X: 143
-        Y: 280
+        Y: 274
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 235, 235, 235
+        BACKGROUND_IMAGE: background.png
+    ClaudeApiPercent:
+      TEXT:
+        SHOW: True
+        X: 88
+        Y: 286
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 217, 119, 87
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 37
+        Y: 287
+        WIDTH: 47
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 217, 119, 87
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    ClaudeApiSpent:
+      TEXT:
+        SHOW: True
+        X: 143
+        Y: 287
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 235, 235, 235
@@ -630,7 +659,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 276
-        Y: 264
+        Y: 261
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -638,7 +667,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 247
-        Y: 265
+        Y: 262
         WIDTH: 26
         HEIGHT: 10
         MIN_VALUE: 0
@@ -650,7 +679,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 310
-        Y: 264
+        Y: 261
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -659,7 +688,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 276
-        Y: 280
+        Y: 274
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -667,7 +696,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 247
-        Y: 281
+        Y: 275
         WIDTH: 26
         HEIGHT: 10
         MIN_VALUE: 0
@@ -679,7 +708,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 310
-        Y: 280
+        Y: 274
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -688,7 +717,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 276
-        Y: 296
+        Y: 287
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -696,7 +725,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 247
-        Y: 297
+        Y: 288
         WIDTH: 26
         HEIGHT: 10
         MIN_VALUE: 0
@@ -708,7 +737,36 @@ STATS:
       TEXT:
         SHOW: True
         X: 310
-        Y: 296
+        Y: 287
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+    GoogleArgonWeekPercent:
+      TEXT:
+        SHOW: True
+        X: 276
+        Y: 300
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 247
+        Y: 301
+        WIDTH: 26
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 66, 133, 244
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    GoogleArgonWeekReset:
+      TEXT:
+        SHOW: True
+        X: 310
+        Y: 300
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244

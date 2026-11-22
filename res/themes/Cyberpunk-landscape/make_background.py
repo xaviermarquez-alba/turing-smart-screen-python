@@ -131,20 +131,20 @@ for row, (left, right) in enumerate((('UP', 'VPN'), ('SSD', 'PROC'), ('GPU', 'GF
 x, y = 4, ROWS[2]
 panel(x, y, 200, H, CLAUDE)
 title(x, y, 'claude', 'CLAUDE', CLAUDE)
-for row, text in enumerate(('5H', '7D', 'FB')):
-    d.text((x + 6, y + 22 + row * 16), text, font=f12, fill=CLAUDE)
+for row, text in enumerate(('5H', '7D', 'FB', 'API')):
+    d.text((x + 6, y + 22 + row * 13), text, font=f12, fill=CLAUDE)
 d.text((x + 6, y + 73), 'TODAY', font=f11, fill=CLAUDE)
 d.text((x + 108, y + 73), '5H', font=f11, fill=CLAUDE)
 x = 209
 panel(x, y, 131, H, GOOGLE)
 title(x, y, 'google', 'GOOGLE', GOOGLE)
-for row, text in enumerate(('G 5H', 'G 7D', 'O 5H', 'O 7D')):
-    d.text((x + 6, y + 22 + row * 16), text, font=f11, fill=GOOGLE)
+for row, text in enumerate(('G 5H', 'G 7D', 'O 5H', 'O 7D', 'A 7D')):
+    d.text((x + 6, y + 22 + row * 13), text, font=f11, fill=GOOGLE)
 x = 345
 panel(x, y, 131, H, CURSOR)
 title(x, y, 'cursor', 'CURSOR', CURSOR)
-d.text((x + 6, y + 25), 'MODEL', font=f11, fill=CURSOR)
-d.text((x + 6, y + 45), 'OTHER', font=f11, fill=CURSOR)
+d.text((x + 6, y + 25), 'GROK', font=f11, fill=CURSOR)
+d.text((x + 6, y + 45), 'PREM', font=f11, fill=CURSOR)
 icon('clock', x + 6, y + 68, CURSOR)
 d.text((x + 22, y + 69), 'RESETS', font=f11, fill=CURSOR)
 
