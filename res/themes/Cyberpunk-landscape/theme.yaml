@@ -581,7 +581,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 440
-        Y: 250
+        Y: 247
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225
@@ -589,7 +589,7 @@ STATS:
       GRAPH:
         SHOW: True
         X: 392
-        Y: 251
+        Y: 248
         WIDTH: 44
         HEIGHT: 10
         MIN_VALUE: 0
@@ -601,7 +601,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 440
-        Y: 270
+        Y: 263
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225
@@ -609,7 +609,27 @@ STATS:
       GRAPH:
         SHOW: True
         X: 392
-        Y: 271
+        Y: 264
+        WIDTH: 44
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 225, 225, 225
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    CursorBotPercent:
+      TEXT:
+        SHOW: True
+        X: 440
+        Y: 279
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 225, 225, 225
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 392
+        Y: 280
         WIDTH: 44
         HEIGHT: 10
         MIN_VALUE: 0
@@ -621,7 +641,7 @@ STATS:
       TEXT:
         SHOW: True
         X: 416
-        Y: 294
+        Y: 296
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225

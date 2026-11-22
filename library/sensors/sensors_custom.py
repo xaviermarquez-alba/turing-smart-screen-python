@@ -363,18 +363,20 @@ class _ClaudePlan:
 
 
 class _CursorPlan:
-    # Reads the Cursor plan usage from the Cursor usage endpoint, using the access token stored by the Cursor editor
-    # on this computer in its local state database. The first value (autoPercentUsed) is the bucket shared by Grok
-    # and Composer and the second (apiPercentUsed) is the premium models bucket (both in % of the included usage).
+    # Reads the Cursor plan usage from the Cursor usage endpoints, using the access token stored by the Cursor
+    # editor on this computer in its local state database. The plan values are "Cursor models" (autoPercentUsed:
+    # Cursor Grok and Composer) and "other models" (apiPercentUsed), plus the weekly Grok Bot quota.
     # The token is only ever sent to api2.cursor.sh.
-    # This endpoint is not documented: values are shown as '--' if it is unavailable.
+    # These endpoints are not documented: values are shown as '--' if they are unavailable.
     URL = "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage"
+    BOT_URL = "https://api2.cursor.sh/aiserver.v1.DashboardService/GetGrokBotUsageBreakdown"
     TTL = 300  # seconds between two requests
     TTL_ERROR = 900  # seconds to wait after a failed request
     MAX_AGE = 3600  # seconds during which the last good values are kept if requests fail
     _next = 0.0
     _updated = 0.0
-    _values = (math.nan, math.nan, math.nan)  # (Grok and Composer %, premium models %, billing cycle end time)
+    # (models %, other %, billing cycle end, Grok Bot weekly %, Grok Bot weekly reset time)
+    _values = (math.nan, math.nan, math.nan, math.nan, math.nan)
 
     @staticmethod
     def _database() -> Path:
@@ -385,6 +387,14 @@ class _CursorPlan:
         else:
             base = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
         return base / "Cursor" / "User" / "globalStorage" / "state.vscdb"
+
+    @staticmethod
+    def _request(url: str, token: str):
+        request = urllib.request.Request(url, data=b"{}", headers={
+            "Authorization": "Bearer " + token, "Content-Type": "application/json",
+            "Connect-Protocol-Version": "1"})
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return json.loads(response.read().decode("utf-8"))
 
     @classmethod
     def get(cls):
@@ -397,22 +407,29 @@ class _CursorPlan:
                         "SELECT value FROM ItemTable WHERE key = 'cursorAuth/accessToken'").fetchone()[0]
                 finally:
                     connection.close()
-                request = urllib.request.Request(cls.URL, data=b"{}", headers={
-                    "Authorization": "Bearer " + token, "Content-Type": "application/json",
-                    "Connect-Protocol-Version": "1"})
-                with urllib.request.urlopen(request, timeout=5) as response:
-                    data = json.loads(response.read().decode("utf-8"))
+                data = cls._request(cls.URL, token)
                 usage = data.get("planUsage") or {}
                 cycle_end = data.get("billingCycleEnd")
+                bot_percent, bot_reset = math.nan, math.nan
+                try:
+                    weekly = cls._request(cls.BOT_URL, token).get("weeklyLimitPpm")
+                    if weekly is not None:
+                        sources = weekly.get("bySource") or ()
+                        bot_percent = sum(float(item.get("ppm") or 0) for item in sources) / 10000
+                        end = weekly.get("periodEndMs")
+                        bot_reset = float(end) / 1000 if end else math.nan
+                except (OSError, sqlite3.Error, ValueError, KeyError, TypeError, AttributeError):
+                    bot_percent, bot_reset = math.nan, math.nan
                 cls._values = (float(usage.get("autoPercentUsed", math.nan)),
                                float(usage.get("apiPercentUsed", math.nan)),
-                               float(cycle_end) / 1000 if cycle_end else math.nan)
+                               float(cycle_end) / 1000 if cycle_end else math.nan,
+                               bot_percent, bot_reset)
                 cls._updated = now
                 cls._next = now + cls.TTL
             except (OSError, sqlite3.Error, ValueError, KeyError, TypeError, AttributeError):
                 cls._next = now + cls.TTL_ERROR
         if now - cls._updated > cls.MAX_AGE:
-            return math.nan, math.nan, math.nan
+            return math.nan, math.nan, math.nan, math.nan, math.nan
         return cls._values
 
 
@@ -623,6 +640,19 @@ class CursorOtherPercent(_SimpleData):
 class CursorReset(_SimpleData):
     def as_string(self) -> str:
         return _format_countdown(_CursorPlan.get()[2])
+
+
+class CursorBotPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _CursorPlan.get()[3]
+
+    def as_string(self) -> str:
+        return _format_percent(_CursorPlan.get()[3])
+
+
+class CursorBotReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown_short(_CursorPlan.get()[4])
 
 
 class GoogleGeminiSessionPercent(_SimpleData):

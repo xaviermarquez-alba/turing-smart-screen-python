@@ -143,9 +143,10 @@ for row, text in enumerate(('G 5H', 'G 7D', 'O 5H', 'O 7D', 'A 7D')):
 x = 345
 panel(x, y, 131, H, CURSOR)
 title(x, y, 'cursor', 'CURSOR', CURSOR)
-d.text((x + 6, y + 25), 'GROK', font=f11, fill=CURSOR)
-d.text((x + 6, y + 45), 'PREM', font=f11, fill=CURSOR)
-icon('clock', x + 6, y + 68, CURSOR)
-d.text((x + 22, y + 69), 'RESETS', font=f11, fill=CURSOR)
+d.text((x + 6, y + 22), 'MODEL', font=f11, fill=CURSOR)
+d.text((x + 6, y + 38), 'OTHER', font=f11, fill=CURSOR)
+d.text((x + 6, y + 54), 'BOT', font=f11, fill=CURSOR)
+icon('clock', x + 6, y + 70, CURSOR)
+d.text((x + 22, y + 71), 'RESETS', font=f11, fill=CURSOR)
 
 im.save('res/themes/Cyberpunk-landscape/background.png')
