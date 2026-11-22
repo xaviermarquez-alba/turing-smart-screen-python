@@ -597,51 +597,118 @@ STATS:
         FONT_SIZE: 12
         FONT_COLOR: 225, 225, 225
         BACKGROUND_IMAGE: background.png
-    GoogleGeminiPercent:
+    GoogleGeminiSessionPercent:
       TEXT:
         SHOW: True
-        X: 303
-        Y: 250
+        X: 276
+        Y: 248
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 241
-        Y: 251
-        WIDTH: 58
+        X: 247
+        Y: 249
+        WIDTH: 26
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
         BAR_COLOR: 66, 133, 244
         BAR_OUTLINE: True
         BACKGROUND_IMAGE: background.png
-    GoogleOtherPercent:
+    GoogleGeminiSessionReset:
       TEXT:
         SHOW: True
-        X: 303
-        Y: 270
+        X: 310
+        Y: 248
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+    GoogleGeminiWeekPercent:
+      TEXT:
+        SHOW: True
+        X: 276
+        Y: 264
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 241
-        Y: 271
-        WIDTH: 58
+        X: 247
+        Y: 265
+        WIDTH: 26
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
         BAR_COLOR: 66, 133, 244
         BAR_OUTLINE: True
         BACKGROUND_IMAGE: background.png
-    GoogleReset:
+    GoogleGeminiWeekReset:
       TEXT:
         SHOW: True
-        X: 278
-        Y: 294
+        X: 310
+        Y: 264
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+    GoogleOtherSessionPercent:
+      TEXT:
+        SHOW: True
+        X: 276
+        Y: 280
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 247
+        Y: 281
+        WIDTH: 26
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 66, 133, 244
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    GoogleOtherSessionReset:
+      TEXT:
+        SHOW: True
+        X: 310
+        Y: 280
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+    GoogleOtherWeekPercent:
+      TEXT:
+        SHOW: True
+        X: 276
+        Y: 296
+        FONT: generale-mono/GeneraleMonoA.ttf
+        FONT_SIZE: 12
+        FONT_COLOR: 66, 133, 244
+        BACKGROUND_IMAGE: background.png
+      GRAPH:
+        SHOW: True
+        X: 247
+        Y: 297
+        WIDTH: 26
+        HEIGHT: 10
+        MIN_VALUE: 0
+        MAX_VALUE: 100
+        BAR_COLOR: 66, 133, 244
+        BAR_OUTLINE: True
+        BACKGROUND_IMAGE: background.png
+    GoogleOtherWeekReset:
+      TEXT:
+        SHOW: True
+        X: 310
+        Y: 296
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244

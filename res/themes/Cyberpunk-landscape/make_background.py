@@ -133,16 +133,19 @@ panel(x, y, 200, H, CLAUDE)
 title(x, y, 'claude', 'CLAUDE', CLAUDE)
 for row, text in enumerate(('5H', '7D', 'FB')):
     d.text((x + 6, y + 22 + row * 16), text, font=f12, fill=CLAUDE)
-    icon('clock', x + 125, y + 22 + row * 16, CLAUDE)
 d.text((x + 6, y + 73), 'TODAY', font=f11, fill=CLAUDE)
 d.text((x + 108, y + 73), '5H', font=f11, fill=CLAUDE)
-for x, name, text, col, rows in ((209, 'google', 'GOOGLE', GOOGLE, ('GEM', 'OTH')),
-                                 (345, 'cursor', 'CURSOR', CURSOR, ('MODEL', 'OTHER'))):
-    panel(x, y, 131, H, col)
-    title(x, y, name, text, col)
-    d.text((x + 6, y + 25), rows[0], font=f11, fill=col)
-    d.text((x + 6, y + 45), rows[1], font=f11, fill=col)
-    icon('clock', x + 6, y + 68, col)
-    d.text((x + 22, y + 69), 'RESETS', font=f11, fill=col)
+x = 209
+panel(x, y, 131, H, GOOGLE)
+title(x, y, 'google', 'GOOGLE', GOOGLE)
+for row, text in enumerate(('G 5H', 'G 7D', 'O 5H', 'O 7D')):
+    d.text((x + 6, y + 22 + row * 16), text, font=f11, fill=GOOGLE)
+x = 345
+panel(x, y, 131, H, CURSOR)
+title(x, y, 'cursor', 'CURSOR', CURSOR)
+d.text((x + 6, y + 25), 'MODEL', font=f11, fill=CURSOR)
+d.text((x + 6, y + 45), 'OTHER', font=f11, fill=CURSOR)
+icon('clock', x + 6, y + 68, CURSOR)
+d.text((x + 22, y + 69), 'RESETS', font=f11, fill=CURSOR)
 
 im.save('res/themes/Cyberpunk-landscape/background.png')

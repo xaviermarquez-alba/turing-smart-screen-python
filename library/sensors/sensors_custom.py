@@ -148,6 +148,21 @@ def _format_countdown(timestamp: float) -> str:
     return f"{text:>7}"
 
 
+def _format_countdown_short(timestamp: float) -> str:
+    # Fixed-width (3 chars) time left before the given timestamp, largest unit only: days, hours or minutes
+    # e.g. ' 5d', '23h', ' 7m'
+    if timestamp is None or math.isnan(timestamp):
+        return " --"
+    minutes = max(0, int((timestamp - time.time()) / 60))
+    if minutes >= 24 * 60:
+        text = f"{minutes // 1440}d"
+    elif minutes >= 60:
+        text = f"{minutes // 60}h"
+    else:
+        text = f"{minutes}m"
+    return f"{text:>3}"
+
+
 def _claude_dir() -> Path:
     return Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 
@@ -354,18 +369,21 @@ class _CursorPlan:
 
 
 class _GooglePlan:
-    # Reads the Google AI plan quotas of Antigravity (Gemini models and other models, in % used of the current window)
-    # from Google Code Assist endpoint, using the token stored by Antigravity in the system keyring (Linux, macOS).
-    # The token is only ever sent to cloudcode-pa.googleapis.com.
+    # Reads the Google AI plan quotas of Antigravity (5-hour and weekly limits for Gemini models and other models,
+    # in % used) from Google Code Assist endpoint, using the token stored by Antigravity in the system keyring
+    # (Linux, macOS). The token is only ever sent to cloudcode-pa.googleapis.com.
     # The token is not refreshed here: once it has expired the last values are kept until their window resets, as
     # Antigravity renews the token whenever it is used.
     # This endpoint is not documented: values are shown as '--' if it is unavailable.
-    URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
+    URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
+    # Google only returns the Gemini group to the Antigravity CLI client name
+    USER_AGENT = "antigravity/cli/1.5.14 (linux/amd64)"
+    BUCKETS = ("gemini-5h", "gemini-weekly", "3p-5h", "3p-weekly")
     TTL = 120  # seconds between two requests
     TTL_ERROR = 900  # seconds to wait after a failed request
     TTL_EXPIRED = 30  # seconds before reading the keyring again while the token is expired (no request is sent)
     _next = 0.0
-    _pools = ((math.nan, math.nan), (math.nan, math.nan))  # (% used, reset time) for Gemini models and other models
+    _pools = ((math.nan, math.nan),) * 4  # (% used, reset time) for gemini-5h, gemini-weekly, 3p-5h, 3p-weekly
 
     class _TokenExpired(Exception):
         pass
@@ -396,25 +414,29 @@ class _GooglePlan:
             try:
                 request = urllib.request.Request(cls.URL, data=b"{}", headers={
                     "Authorization": "Bearer " + cls._token(), "Content-Type": "application/json",
-                    "User-Agent": "antigravity"})
+                    "User-Agent": cls.USER_AGENT})
                 with urllib.request.urlopen(request, timeout=5) as response:
                     data = json.loads(response.read().decode("utf-8"))
-                pools = ([], [])
-                for model in data["models"].values():
-                    quota = model.get("quotaInfo") or {}
-                    reset = quota.get("resetTime")
-                    if reset:  # Models without a reset time are not limited
-                        used = 100 * (1 - float(quota.get("remainingFraction", 0)))
-                        reset = datetime.datetime.fromisoformat(reset.replace("Z", "+00:00")).timestamp()
-                        pools[model.get("modelProvider") != "MODEL_PROVIDER_GOOGLE"].append((used, reset))
-                cls._pools = tuple(max(pool, default=(math.nan, math.nan)) for pool in pools)
+                found = {}
+                for group in data["groups"]:
+                    for bucket in group.get("buckets") or ():
+                        bucket_id = bucket.get("bucketId")
+                        if bucket_id in cls.BUCKETS:
+                            remaining = bucket.get("remainingFraction")
+                            reset = bucket.get("resetTime")
+                            used = 100 * (1 - float(remaining)) if remaining is not None else math.nan
+                            reset = (datetime.datetime.fromisoformat(reset.replace("Z", "+00:00")).timestamp()
+                                     if reset else math.nan)
+                            found[bucket_id] = (used, reset)
+                cls._pools = tuple(found.get(bucket_id, (math.nan, math.nan)) for bucket_id in cls.BUCKETS)
                 cls._next = now + cls.TTL
             except cls._TokenExpired:
                 cls._next = now + cls.TTL_EXPIRED
             except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError, AttributeError):
                 cls._next = now + cls.TTL_ERROR
         # A window that has reset since the last successful request is back to 0 %
-        return tuple((0.0, math.nan) if now >= reset else (used, reset) for used, reset in cls._pools)
+        return tuple((0.0, math.nan) if not math.isnan(used) and now >= reset else (used, reset)
+                     for used, reset in cls._pools)
 
 
 class _Weather:
@@ -532,7 +554,7 @@ class CursorReset(_SimpleData):
         return _format_countdown(_CursorPlan.get()[2])
 
 
-class GoogleGeminiPercent(_SimpleData):
+class GoogleGeminiSessionPercent(_SimpleData):
     def as_numeric(self) -> float:
         return _GooglePlan.get()[0][0]
 
@@ -540,7 +562,12 @@ class GoogleGeminiPercent(_SimpleData):
         return _format_percent(_GooglePlan.get()[0][0])
 
 
-class GoogleOtherPercent(_SimpleData):
+class GoogleGeminiSessionReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown_short(_GooglePlan.get()[0][1])
+
+
+class GoogleGeminiWeekPercent(_SimpleData):
     def as_numeric(self) -> float:
         return _GooglePlan.get()[1][0]
 
@@ -548,11 +575,35 @@ class GoogleOtherPercent(_SimpleData):
         return _format_percent(_GooglePlan.get()[1][0])
 
 
-class GoogleReset(_SimpleData):
+class GoogleGeminiWeekReset(_SimpleData):
     def as_string(self) -> str:
-        # Next reset among the two windows
-        return _format_countdown(min((reset for _, reset in _GooglePlan.get() if not math.isnan(reset)),
-                                     default=math.nan))
+        return _format_countdown_short(_GooglePlan.get()[1][1])
+
+
+class GoogleOtherSessionPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _GooglePlan.get()[2][0]
+
+    def as_string(self) -> str:
+        return _format_percent(_GooglePlan.get()[2][0])
+
+
+class GoogleOtherSessionReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown_short(_GooglePlan.get()[2][1])
+
+
+class GoogleOtherWeekPercent(_SimpleData):
+    def as_numeric(self) -> float:
+        return _GooglePlan.get()[3][0]
+
+    def as_string(self) -> str:
+        return _format_percent(_GooglePlan.get()[3][0])
+
+
+class GoogleOtherWeekReset(_SimpleData):
+    def as_string(self) -> str:
+        return _format_countdown_short(_GooglePlan.get()[3][1])
 
 
 class WeatherTemperature(_SimpleData):
