@@ -67,11 +67,19 @@ def icon(name, x, y, col=Y):
             dx, dy = 6.5 * math.cos(math.radians(a)), 6.5 * math.sin(math.radians(a))
             d.line([(x + 6.5 - dx, y + 6.5 - dy), (x + 6.5 + dx, y + 6.5 + dy)], fill=col, width=2)
     elif name == 'google':
-        d.arc([x, y, x + 12, y + 12], 0, 315, fill=col, width=2)
-        d.line([(x + 6, y + 6), (x + 12, y + 6)], fill=col, width=2)
+        # Four-colour G: blue right and bar, green bottom, yellow left, red top
+        for start, end, c in ((0, 45, GOOGLE), (45, 135, (52, 168, 83)), (135, 210, (251, 188, 5)),
+                              (210, 315, (234, 67, 53))):
+            d.arc([x, y, x + 12, y + 12], start, end, fill=c, width=2)
+        d.line([(x + 6, y + 6), (x + 12, y + 6)], fill=GOOGLE, width=2)
     elif name == 'cursor':
-        d.polygon([(x + 2, y), (x + 2, y + 11), (x + 5, y + 8), (x + 8, y + 13), (x + 10, y + 12), (x + 7, y + 7), (x + 11, y + 7)],
-                  outline=col)
+        # Cursor logo: isometric cube, right face filled
+        top, ne, se, bot, sw, nw, mid = ((x + 6, y), (x + 12, y + 3), (x + 12, y + 10), (x + 6, y + 13),
+                                         (x, y + 10), (x, y + 3), (x + 6, y + 6))
+        d.polygon([mid, ne, se, bot], fill=col)
+        d.polygon([top, ne, se, bot, sw, nw], outline=col)
+        d.line([nw, mid, ne], fill=col)
+        d.line([mid, bot], fill=col)
     elif name == 'sun':
         d.ellipse([x + 4, y + 4, x + 9, y + 9], fill=col)
         for a in range(0, 360, 45):
@@ -127,21 +135,21 @@ x, y = COLS[2], ROWS[1]
 for row, (left, right) in enumerate((('UP', 'VPN'), ('SSD', 'PROC'), ('GPU', 'GFAN'), ('DOCK', 'SWAP'))):
     d.text((x + 6, y + 24 + row * 16), left, font=f11, fill=SYS)
     d.text((x + 80, y + 24 + row * 16), right, font=f11, fill=SYS)
-# Claude, Google, Cursor
-x, y = 4, ROWS[2]
-panel(x, y, 200, H, CLAUDE)
+# Claude, Google, Cursor: same size as the six panels above (COLS x W)
+x, y = COLS[0], ROWS[2]
+panel(4, y, W, H, CLAUDE)
 title(x, y, 'claude', 'CLAUDE', CLAUDE)
 for row, text in enumerate(('5H', '7D', 'FB', 'API')):
     d.text((x + 6, y + 22 + row * 13), text, font=f12, fill=CLAUDE)
-d.text((x + 6, y + 73), 'TODAY', font=f11, fill=CLAUDE)
-d.text((x + 108, y + 73), '5H', font=f11, fill=CLAUDE)
-x = 209
-panel(x, y, 131, H, GOOGLE)
+d.text((x + 6, y + 73), 'DAY', font=f11, fill=CLAUDE)
+d.text((x + 78, y + 73), '5H', font=f11, fill=CLAUDE)
+x = COLS[1]
+panel(x, y, W, H, GOOGLE)
 title(x, y, 'google', 'GOOGLE', GOOGLE)
-for row, text in enumerate(('G 5H', 'G 7D', 'O 5H', 'O 7D', 'A 7D')):
-    d.text((x + 6, y + 22 + row * 13), text, font=f11, fill=GOOGLE)
-x = 345
-panel(x, y, 131, H, CURSOR)
+for row, text in enumerate(('G 5H', 'G 7D', 'O 5H', 'O 7D')):
+    d.text((x + 6, y + 22 + row * 16), text, font=f11, fill=GOOGLE)
+x = COLS[2]
+panel(x, y, W, H, CURSOR)
 title(x, y, 'cursor', 'CURSOR', CURSOR)
 d.text((x + 6, y + 22), 'MODEL', font=f11, fill=CURSOR)
 d.text((x + 6, y + 38), 'OTHER', font=f11, fill=CURSOR)

@@ -434,21 +434,22 @@ class _CursorPlan:
 
 
 class _GooglePlan:
-    # Reads the Google AI plan quotas of Antigravity (5-hour and weekly limits for Gemini models and other models,
-    # plus the Gemini 4 Argon weekly quota, in % used) from Google Code Assist endpoint, using the token stored by
-    # Antigravity in the system keyring (Linux, macOS). The token is only ever sent to cloudcode-pa.googleapis.com.
+    # Reads the Google AI plan quotas of Antigravity (5-hour and weekly limits for the Gemini group and other models,
+    # in % used) from Google Code Assist endpoint, using the token stored by Antigravity in the system keyring
+    # (Linux, macOS). The Gemini group covers Neon, Carbon and Hydrogen. The token is only ever sent to
+    # cloudcode-pa.googleapis.com.
     # The token is not refreshed here: once it has expired the last values are kept until their window resets, as
     # Antigravity renews the token whenever it is used.
     # This endpoint is not documented: values are shown as '--' if it is unavailable.
     URL = "https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
     # Google only returns the Gemini group to the Antigravity CLI client name
     USER_AGENT = "antigravity/cli/1.5.14 (linux/amd64)"
-    BUCKETS = ("gemini-5h", "gemini-weekly", "3p-5h", "3p-weekly", "gemini-argon-wtu-weekly")
+    BUCKETS = ("gemini-5h", "gemini-weekly", "3p-5h", "3p-weekly")
     TTL = 120  # seconds between two requests
     TTL_ERROR = 900  # seconds to wait after a failed request
     TTL_EXPIRED = 30  # seconds before reading the keyring again while the token is expired (no request is sent)
     _next = 0.0
-    _pools = ((math.nan, math.nan),) * 5  # (% used, reset time) for each of BUCKETS
+    _pools = ((math.nan, math.nan),) * 4  # (% used, reset time) for each of BUCKETS
 
     class _TokenExpired(Exception):
         pass
@@ -559,7 +560,7 @@ class ClaudeSessionPercent(_SimpleData):
 
 class ClaudeSessionReset(_SimpleData):
     def as_string(self) -> str:
-        return _format_countdown(_ClaudePlan.get()[1])
+        return _format_countdown_short(_ClaudePlan.get()[1])
 
 
 class ClaudeWeekPercent(_SimpleData):
@@ -572,7 +573,7 @@ class ClaudeWeekPercent(_SimpleData):
 
 class ClaudeWeekReset(_SimpleData):
     def as_string(self) -> str:
-        return _format_countdown(_ClaudePlan.get()[3])
+        return _format_countdown_short(_ClaudePlan.get()[3])
 
 
 class ClaudeFablePercent(_SimpleData):
@@ -585,7 +586,7 @@ class ClaudeFablePercent(_SimpleData):
 
 class ClaudeFableReset(_SimpleData):
     def as_string(self) -> str:
-        return _format_countdown(_ClaudePlan.get()[5])
+        return _format_countdown_short(_ClaudePlan.get()[5])
 
 
 class ClaudeApiPercent(_SimpleData):
@@ -705,19 +706,6 @@ class GoogleOtherWeekPercent(_SimpleData):
 class GoogleOtherWeekReset(_SimpleData):
     def as_string(self) -> str:
         return _format_countdown_short(_GooglePlan.get()[3][1])
-
-
-class GoogleArgonWeekPercent(_SimpleData):
-    def as_numeric(self) -> float:
-        return _GooglePlan.get()[4][0]
-
-    def as_string(self) -> str:
-        return _format_percent(_GooglePlan.get()[4][0])
-
-
-class GoogleArgonWeekReset(_SimpleData):
-    def as_string(self) -> str:
-        return _format_countdown_short(_GooglePlan.get()[4][1])
 
 
 class WeatherTemperature(_SimpleData):

@@ -446,7 +446,7 @@ STATS:
     ClaudeSessionPercent:
       TEXT:
         SHOW: True
-        X: 88
+        X: 65
         Y: 247
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -456,7 +456,7 @@ STATS:
         SHOW: True
         X: 37
         Y: 248
-        WIDTH: 47
+        WIDTH: 24
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -466,7 +466,7 @@ STATS:
     ClaudeSessionReset:
       TEXT:
         SHOW: True
-        X: 143
+        X: 97
         Y: 248
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -475,7 +475,7 @@ STATS:
     ClaudeWeekPercent:
       TEXT:
         SHOW: True
-        X: 88
+        X: 65
         Y: 260
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -485,7 +485,7 @@ STATS:
         SHOW: True
         X: 37
         Y: 261
-        WIDTH: 47
+        WIDTH: 24
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -495,7 +495,7 @@ STATS:
     ClaudeWeekReset:
       TEXT:
         SHOW: True
-        X: 143
+        X: 97
         Y: 261
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -504,7 +504,7 @@ STATS:
     ClaudeFablePercent:
       TEXT:
         SHOW: True
-        X: 88
+        X: 65
         Y: 273
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -514,7 +514,7 @@ STATS:
         SHOW: True
         X: 37
         Y: 274
-        WIDTH: 47
+        WIDTH: 24
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -524,7 +524,7 @@ STATS:
     ClaudeFableReset:
       TEXT:
         SHOW: True
-        X: 143
+        X: 97
         Y: 274
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -533,7 +533,7 @@ STATS:
     ClaudeApiPercent:
       TEXT:
         SHOW: True
-        X: 88
+        X: 65
         Y: 286
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -543,7 +543,7 @@ STATS:
         SHOW: True
         X: 37
         Y: 287
-        WIDTH: 47
+        WIDTH: 24
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -553,7 +553,7 @@ STATS:
     ClaudeApiSpent:
       TEXT:
         SHOW: True
-        X: 143
+        X: 97
         Y: 287
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -562,7 +562,7 @@ STATS:
     ClaudeTokensToday:
       TEXT:
         SHOW: True
-        X: 49
+        X: 24
         Y: 298
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -571,7 +571,7 @@ STATS:
     ClaudeTokensLast5h:
       TEXT:
         SHOW: True
-        X: 129
+        X: 97
         Y: 298
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -588,9 +588,9 @@ STATS:
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 392
+        X: 369
         Y: 248
-        WIDTH: 44
+        WIDTH: 67
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -608,9 +608,9 @@ STATS:
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 392
+        X: 369
         Y: 264
-        WIDTH: 44
+        WIDTH: 67
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -628,9 +628,9 @@ STATS:
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 392
+        X: 369
         Y: 280
-        WIDTH: 44
+        WIDTH: 67
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -649,7 +649,7 @@ STATS:
     GoogleGeminiSessionPercent:
       TEXT:
         SHOW: True
-        X: 276
+        X: 253
         Y: 248
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -657,9 +657,9 @@ STATS:
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 247
+        X: 201
         Y: 249
-        WIDTH: 26
+        WIDTH: 49
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -669,7 +669,7 @@ STATS:
     GoogleGeminiSessionReset:
       TEXT:
         SHOW: True
-        X: 310
+        X: 287
         Y: 248
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
@@ -678,17 +678,17 @@ STATS:
     GoogleGeminiWeekPercent:
       TEXT:
         SHOW: True
-        X: 276
-        Y: 261
+        X: 253
+        Y: 264
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 247
-        Y: 262
-        WIDTH: 26
+        X: 201
+        Y: 265
+        WIDTH: 49
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -698,8 +698,8 @@ STATS:
     GoogleGeminiWeekReset:
       TEXT:
         SHOW: True
-        X: 310
-        Y: 261
+        X: 287
+        Y: 264
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -707,17 +707,17 @@ STATS:
     GoogleOtherSessionPercent:
       TEXT:
         SHOW: True
-        X: 276
-        Y: 274
+        X: 253
+        Y: 280
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 247
-        Y: 275
-        WIDTH: 26
+        X: 201
+        Y: 281
+        WIDTH: 49
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -727,8 +727,8 @@ STATS:
     GoogleOtherSessionReset:
       TEXT:
         SHOW: True
-        X: 310
-        Y: 274
+        X: 287
+        Y: 280
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
@@ -736,17 +736,17 @@ STATS:
     GoogleOtherWeekPercent:
       TEXT:
         SHOW: True
-        X: 276
-        Y: 287
+        X: 253
+        Y: 296
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
         BACKGROUND_IMAGE: background.png
       GRAPH:
         SHOW: True
-        X: 247
-        Y: 288
-        WIDTH: 26
+        X: 201
+        Y: 297
+        WIDTH: 49
         HEIGHT: 10
         MIN_VALUE: 0
         MAX_VALUE: 100
@@ -756,37 +756,8 @@ STATS:
     GoogleOtherWeekReset:
       TEXT:
         SHOW: True
-        X: 310
-        Y: 287
-        FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 12
-        FONT_COLOR: 66, 133, 244
-        BACKGROUND_IMAGE: background.png
-    GoogleArgonWeekPercent:
-      TEXT:
-        SHOW: True
-        X: 276
-        Y: 300
-        FONT: generale-mono/GeneraleMonoA.ttf
-        FONT_SIZE: 12
-        FONT_COLOR: 66, 133, 244
-        BACKGROUND_IMAGE: background.png
-      GRAPH:
-        SHOW: True
-        X: 247
-        Y: 301
-        WIDTH: 26
-        HEIGHT: 10
-        MIN_VALUE: 0
-        MAX_VALUE: 100
-        BAR_COLOR: 66, 133, 244
-        BAR_OUTLINE: True
-        BACKGROUND_IMAGE: background.png
-    GoogleArgonWeekReset:
-      TEXT:
-        SHOW: True
-        X: 310
-        Y: 300
+        X: 287
+        Y: 296
         FONT: generale-mono/GeneraleMonoA.ttf
         FONT_SIZE: 12
         FONT_COLOR: 66, 133, 244
