@@ -290,9 +290,13 @@ class _ClaudePlan:
     TTL = 300  # seconds between two requests
     TTL_ERROR = 300  # seconds to wait after a failed request
     MAX_AGE = 3600  # seconds during which the last good values are kept if requests fail
+    TTL_EXPIRED = 30  # seconds before reading the credentials again while the token is expired (no request is sent)
     _next = 0.0
     _updated = 0.0
     _values = (math.nan, math.nan, math.nan, math.nan, math.nan, math.nan)
+
+    class _TokenExpired(Exception):
+        pass
 
     @staticmethod
     def _window(data: dict, name: str):
@@ -335,13 +339,22 @@ class _ClaudePlan:
         if now >= cls._next:
             try:
                 with open(_claude_dir() / ".credentials.json", "r", encoding="utf-8") as file:
-                    token = json.load(file)["claudeAiOauth"]["accessToken"]
+                    oauth = json.load(file)["claudeAiOauth"]
+                token = oauth["accessToken"]
+                try:  # Claude Code renews the token only while it runs: an expired one gets 401, then 429 for 1 hour
+                    expired = now >= float(oauth["expiresAt"]) / 1000
+                except (KeyError, TypeError, ValueError):
+                    expired = False  # Unknown expiry: let the request tell
+                if expired:
+                    raise cls._TokenExpired()
                 data = _http_get_json(cls.URL, {"Authorization": "Bearer " + token,
                                                 "anthropic-beta": "oauth-2025-04-20"})
                 cls._values = (cls._window(data, "five_hour") + cls._window(data, "seven_day")
                                + cls._fable_limit(data))
                 cls._updated = now
                 cls._next = now + cls.TTL
+            except cls._TokenExpired:
+                cls._next = now + cls.TTL_EXPIRED
             except urllib.error.HTTPError as error:
                 delay = cls.TTL_ERROR
                 retry_after = error.headers.get("Retry-After") if error.headers else None
